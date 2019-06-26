@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebGL GPE</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="gpe.css">
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
+    </script>
+    <script id="shader-fs-show" type="x-shader/x-fragment">
+        precision highp float;
+        uniform sampler2D samp;
+        varying vec2 vTexCoord;
+        void main(void) {
+            float i = texture2D(samp, vTexCoord).z;
+            float a = atan(texture2D(samp, vTexCoord).y, texture2D(samp, vTexCoord).x)*.955 + 3.;
+            gl_FragColor = vec4(i*clamp(abs(a - 3.) - 1., 0., 1.),i*clamp(2. - abs(a - 2.), 0., 1.),i*clamp(2. - abs(a - 4.), 0., 1.), 1.);
+            //gl_FragColor = vec4(i/1.01,i/1.01,i/1.01,1.);
+        }
+    </script>
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec2 aPos;
+        attribute vec2 aTexCoord;
+        varying   vec2 vTexCoord;
+        void main(void) {
+            gl_Position = vec4(aPos, 0., 1.);
+            vTexCoord = aTexCoord;
+        }
+    </script>
+    <script id="shader-fs-dpsi" type="x-shader/x-fragment">
+        precision highp float;
+        uniform sampler2D samp;
+        uniform sampler2D samp_k;
+        uniform int addPot;
+        uniform float addPot_x;
+        uniform float addPot_y;
+        uniform float addPot_r;
+        uniform float dx2;
+        uniform float dt;
+        uniform float gamma;
+        uniform int kstep;
+        varying vec2 vTexCoord;
+        const float d = 1./256.;
+        vec2 cmpxmul(in vec2 a, in vec2 b) {
+            return vec2(a.x * b.x - a.y * b.y, a.y * b.x + a.x * b.y);
+        }
+        float cmpxmag(in vec2 c) {
+            return sqrt(c.x * c.x + c.y * c.y);
+        }
+        vec2 cmpxcjg(in vec2 c) {
+            return vec2(c.x, -c.y);
+        }
+        void main(void) {
+            vec2 eye = vec2(0., 1.);
+            vec2 psi = vec2(texture2D(samp, vTexCoord).x, texture2D(samp, vTexCoord).y);
+            vec2 psi_pdy = vec2(texture2D(samp, vec2(vTexCoord.x, vTexCoord.y + d)).x, texture2D(samp, vec2(vTexCoord.x, vTexCoord.y + d)).y);
+            vec2 psi_mdy = vec2(texture2D(samp, vec2(vTexCoord.x, vTexCoord.y - d)).x, texture2D(samp, vec2(vTexCoord.x, vTexCoord.y - d)).y);
+            vec2 psi_pdx = vec2(texture2D(samp, vec2(vTexCoord.x + d, vTexCoord.y)).x, texture2D(samp, vec2(vTexCoord.x + d, vTexCoord.y)).y);
+            vec2 psi_mdx = vec2(texture2D(samp, vec2(vTexCoord.x - d, vTexCoord.y)).x, texture2D(samp, vec2(vTexCoord.x - d, vTexCoord.y)).y);
+
+            if (kstep == 2 || kstep == 3){
+                vec2 k = vec2(texture2D(samp_k, vTexCoord).x, texture2D(samp_k, vTexCoord).y);
+                vec2 k_pdy = vec2(texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y + d)).x, texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y + d)).y);
+                vec2 k_mdy = vec2(texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y - d)).x, texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y - d)).y);
+                vec2 k_pdx = vec2(texture2D(samp_k, vec2(vTexCoord.x + d, vTexCoord.y)).x, texture2D(samp_k, vec2(vTexCoord.x + d, vTexCoord.y)).y);
+                vec2 k_mdx = vec2(texture2D(samp_k, vec2(vTexCoord.x - d, vTexCoord.y)).x, texture2D(samp_k, vec2(vTexCoord.x - d, vTexCoord.y)).y);
+                psi += 0.5*k;
+                psi_pdy += 0.5*k_pdy;
+                psi_mdy += 0.5*k_mdy;
+                psi_pdx += 0.5*k_pdx;
+                psi_mdx += 0.5*k_mdx;
+            } else if (kstep == 4){
+                vec2 k = vec2(texture2D(samp_k, vTexCoord).x, texture2D(samp_k, vTexCoord).y);
+                vec2 k_pdy = vec2(texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y + d)).x, texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y + d)).y);
+                vec2 k_mdy = vec2(texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y - d)).x, texture2D(samp_k, vec2(vTexCoord.x, vTexCoord.y - d)).y);
+                vec2 k_pdx = vec2(texture2D(samp_k, vec2(vTexCoord.x + d, vTexCoord.y)).x, texture2D(samp_k, vec2(vTexCoord.x + d, vTexCoord.y)).y);
+                vec2 k_mdx = vec2(texture2D(samp_k, vec2(vTexCoord.x - d, vTexCoord.y)).x, texture2D(samp_k, vec2(vTexCoord.x - d, vTexCoord.y)).y);
+                psi += k;
+                psi_pdy += k_pdy;
+                psi_mdy += k_mdy;
+                psi_pdx += k_pdx;
+                psi_mdx += k_mdx;
+            }
+
+            vec2 dpsi_H = -0.5*(psi_pdy + psi_mdy + psi_pdx + psi_mdx - 4.*psi)/dx2  + (psi.x*psi.x + psi.y*psi.y)*psi - psi;
+            if(addPot > 0){
+                dpsi_H += 20.*exp(-64.*64.*(vTexCoord.x-addPot_x)*(vTexCoord.x-addPot_x)/addPot_r - 64.*64.*(vTexCoord.y-addPot_y)*(vTexCoord.y-addPot_y)/addPot_r)*psi;
+            }
+            vec2 dpsi = cmpxmul(dpsi_H,-gamma-eye)*dt;
+            gl_FragColor = vec4(dpsi.x, dpsi.y, 0., 0. );
+        }
+    </script>
+    <script id="shader-fs-step" type="x-shader/x-fragment">
+        precision highp float;
+        uniform sampler2D samp;
+        uniform sampler2D samp_k1;
+        uniform sampler2D samp_k2;
+        uniform sampler2D samp_k3;
+        uniform sampler2D samp_k4;
+        uniform int addVortex;
+        uniform int reset;
+        uniform float addVortex_x;
+        uniform float addVortex_y;
+        varying vec2 vTexCoord;
+        const float d = 1./256.;
+        float cmpxmag(in vec2 c) {
+            return sqrt(c.x * c.x + c.y * c.y);
+        }
+        vec2 cmpxmul(in vec2 a, in vec2 b) {
+            return vec2(a.x * b.x - a.y * b.y, a.y * b.x + a.x * b.y);
+        }
+        void main(void) {
+            vec2 psi = vec2(texture2D(samp, vTexCoord).x, texture2D(samp, vTexCoord).y);
+            vec2 psik1 = vec2(texture2D(samp, vTexCoord).x, texture2D(samp, vTexCoord).y);
+            vec2 psi_new = psi +
+                vec2(texture2D(samp_k1, vTexCoord).x, texture2D(samp_k1, vTexCoord).y)/6. +
+                vec2(texture2D(samp_k2, vTexCoord).x, texture2D(samp_k2, vTexCoord).y)/3. +
+                vec2(texture2D(samp_k3, vTexCoord).x, texture2D(samp_k3, vTexCoord).y)/3. +
+                vec2(texture2D(samp_k4, vTexCoord).x, texture2D(samp_k4, vTexCoord).y)/6.;
+            if (addVortex==1){
+                psi_new = cmpxmul(psi_new,vec2(cos(atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x)),-sin(atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x))));
+            }else if (addVortex==-1){
+                psi_new = cmpxmul(psi_new,vec2(cos(-atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x)),-sin(-atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x))));
+            }
+            if (reset==1){
+                psi_new = vec2(1.0,0.0);
+            }
+            gl_FragColor = vec4(psi_new.x, psi_new.y, cmpxmag(psi_new), 0. );
+        }
+    </script>
+  </head>
+  <body>
+    <h1>WebGL GPE</h1>
+    <canvas id="GPE" width="256" height="256"></canvas><br>
+    <img src="gpe.svg" width="50%">
+    <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="dat.gui.js"></script>
+    <script src="gpe.js?v=0.04"></script>
+  </body>
+</html>
