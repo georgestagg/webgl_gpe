@@ -21,60 +21,110 @@ function getShader ( gl, id ){
 
 function draw(){
     for(var i=0; i<10;i++){
+        //First pass
         gl.useProgram(prog);
-        gl.uniform1i(sampLoc, 1);
-        gl.uniform1i(samp_kLoc, 0);
-        gl.uniform1i(kstepLoc, 2);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K1);
+        gl.uniform1i(psi_re, 2);
+        gl.uniform1i(psi_im, 3);
+        gl.uniform1i(kstep, 1);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K1_RE);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.uniform1i(sampLoc, 1);
-        gl.uniform1i(samp_kLoc, 2);
-        gl.uniform1i(kstepLoc, 2);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K2);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K1_IM);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.uniform1i(sampLoc, 1);
-        gl.uniform1i(samp_kLoc, 3);
-        gl.uniform1i(kstepLoc, 3);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K3);
+
+        gl.uniform1i(k_re, 4);
+        gl.uniform1i(k_im, 5);
+        gl.uniform1i(kstep, 2);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K2_RE);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.uniform1i(sampLoc, 1);
-        gl.uniform1i(samp_kLoc, 4);
-        gl.uniform1i(kstepLoc, 4);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K4);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K2_IM);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        gl.uniform1i(k_re, 6);
+        gl.uniform1i(k_im, 7);
+        gl.uniform1i(kstep, 3);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K3_RE);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K3_IM);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        gl.uniform1i(k_re, 8);
+        gl.uniform1i(k_im, 9);
+        gl.uniform1i(kstep, 4);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K4_RE);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K4_IM);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         
         gl.useProgram(prog_step);
-        gl.uniform1i(samp_stepLoc, 1);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO);
+        gl.uniform1i(step_psi_re, 2);
+        gl.uniform1i(step_psi_im, 3);
+        gl.uniform1i(step_reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_PSI1_RE);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.uniform1i(step_reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_PSI1_IM);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.uniform1i(gl.getUniformLocation(prog_step, "addVortex"), 0);
         gl.uniform1i(gl.getUniformLocation(prog_step, "reset"), 0);
 
+        //Second pass
         gl.useProgram(prog);
-        gl.uniform1i(sampLoc, 0);
-        gl.uniform1i(samp_kLoc, 0);
-        gl.uniform1i(kstepLoc, 2);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K1);
+        gl.uniform1i(psi_re, 0);
+        gl.uniform1i(psi_im, 1);
+        gl.uniform1i(kstep, 1);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K1_RE);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.uniform1i(sampLoc, 0);
-        gl.uniform1i(samp_kLoc, 2);
-        gl.uniform1i(kstepLoc, 2);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K2);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K1_IM);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.uniform1i(sampLoc, 0);
-        gl.uniform1i(samp_kLoc, 3);
-        gl.uniform1i(kstepLoc, 3);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K3);
+
+        gl.uniform1i(k_re, 4);
+        gl.uniform1i(k_im, 5);
+        gl.uniform1i(kstep, 2);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K2_RE);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.uniform1i(sampLoc, 0);
-        gl.uniform1i(samp_kLoc, 4);
-        gl.uniform1i(kstepLoc, 4);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K4);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K2_IM);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        gl.uniform1i(k_re, 6);
+        gl.uniform1i(k_im, 7);
+        gl.uniform1i(kstep, 3);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K3_RE);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K3_IM);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        gl.uniform1i(k_re, 8);
+        gl.uniform1i(k_im, 9);
+        gl.uniform1i(kstep, 4);
+        gl.uniform1i(reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K4_RE);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.uniform1i(reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_K4_IM);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         
         gl.useProgram(prog_step);
-        gl.uniform1i(samp_stepLoc, 0);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO1);
+        gl.uniform1i(step_psi_re, 0);
+        gl.uniform1i(step_psi_im, 1);
+        gl.uniform1i(step_reim, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_PSI2_RE);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.uniform1i(step_reim, 1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_PSI2_IM);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
@@ -84,10 +134,8 @@ function draw(){
     requestAnimationFrame(draw);
 }
 
-var n = 256;
 var c = document.getElementById("GPE");
-var gl = c.getContext("experimental-webgl");
-var ext = gl.getExtension("OES_texture_float");
+var gl = c.getContext("webgl");
 var prog  = gl.createProgram();
 gl.attachShader(prog, getShader( gl, "shader-vs" ));
 gl.attachShader(prog, getShader( gl, "shader-fs-dpsi" ));
@@ -123,10 +171,13 @@ gl.vertexAttribPointer(aTexLoc_step, 2, gl.FLOAT, gl.FALSE, 16, 8);
 gl.enableVertexAttribArray( aPosLoc_step );
 gl.enableVertexAttribArray( aTexLoc_step );
 
+var n = 256;
 var dx = 0.5;
-
+var gamma = 0.01;
+var dt = 0.1;
+var pot_r = 3;
 var n1 = n-1, h = 1/n1, t = 0;
-pix = new Float32Array(4*n*n);
+pix = new Uint8Array(4*n*n);
 var p = 0;
 for(var i = 0; i < n; i++ )
 for(var j = 0; j < n; j++ ){
@@ -134,101 +185,72 @@ for(var j = 0; j < n; j++ ){
     var x2 = (j - n/2)*dx + 5., y2 = (i - n/2)*dx, fi2 = Math.atan2(y2,x2);
     var r1 =  1 - Math.exp(-2.*(x1*x1 + y1*y1));
     var r2 =  1 - Math.exp(-2.*(x2*x2 + y2*y2));
-    pix[p++] = x = r1*r2*Math.cos(fi1+fi2);
-    pix[p++] = y = r1*r2*Math.sin(fi1+fi2);
-    pix[p++] = Math.sqrt(x*x + y*y);
+    pix[p++] = 0;//x = r1*r2*Math.cos(fi1+fi2);
+    pix[p++] = 0;//y = r1*r2*Math.sin(fi1+fi2);
+    pix[p++] = 0;//Math.sqrt(x*x + y*y);
     pix[p++] = 0;
 }
 
-var texture = gl.createTexture();
-gl.activeTexture(gl.TEXTURE0);
-gl.bindTexture(gl.TEXTURE_2D, texture);
-gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, n, n, 0, gl.RGBA, gl.FLOAT, pix);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+function makeTexture(gl_tex){
+    var t = gl.createTexture();
+    gl.activeTexture(gl_tex);
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, n, n, 0, gl.RGBA, gl.UNSIGNED_BYTE, pix);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+    return t;
+}
 
-var texture1 = gl.createTexture();
-gl.activeTexture(gl.TEXTURE1);
-gl.bindTexture(gl.TEXTURE_2D, texture1);
-gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, n, n, 0, gl.RGBA, gl.FLOAT, pix);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+function makeFBO(texture){
+    var fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    return fbo;
+}
 
-var texture_rk4_k1 = gl.createTexture();
-gl.activeTexture(gl.TEXTURE2);
-gl.bindTexture(gl.TEXTURE_2D, texture_rk4_k1);
-gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, n, n, 0, gl.RGBA, gl.FLOAT, pix);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
-var texture_rk4_k2 = gl.createTexture();
-gl.activeTexture(gl.TEXTURE3);
-gl.bindTexture(gl.TEXTURE_2D, texture_rk4_k2);
-gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, n, n, 0, gl.RGBA, gl.FLOAT, pix);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
-var texture_rk4_k3 = gl.createTexture();
-gl.activeTexture(gl.TEXTURE4);
-gl.bindTexture(gl.TEXTURE_2D, texture_rk4_k3);
-gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, n, n, 0, gl.RGBA, gl.FLOAT, pix);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
-var texture_rk4_k4 = gl.createTexture();
-gl.activeTexture(gl.TEXTURE5);
-gl.bindTexture(gl.TEXTURE_2D, texture_rk4_k4);
-gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, n, n, 0, gl.RGBA, gl.FLOAT, pix);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+var texture_psi1_re = makeTexture(gl.TEXTURE0);
+var texture_psi1_im = makeTexture(gl.TEXTURE1);
+var texture_psi2_re = makeTexture(gl.TEXTURE2);
+var texture_psi2_im = makeTexture(gl.TEXTURE3);
+var texture_k1_re = makeTexture(gl.TEXTURE4);
+var texture_k1_im = makeTexture(gl.TEXTURE5);
+var texture_k2_re = makeTexture(gl.TEXTURE6);
+var texture_k2_im = makeTexture(gl.TEXTURE7);
+var texture_k3_re = makeTexture(gl.TEXTURE8);
+var texture_k3_im = makeTexture(gl.TEXTURE9);
+var texture_k4_re = makeTexture(gl.TEXTURE10);
+var texture_k4_im = makeTexture(gl.TEXTURE11);
 
-var FBO = gl.createFramebuffer();
-gl.bindFramebuffer(gl.FRAMEBUFFER, FBO);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
-var FBO1 = gl.createFramebuffer();
-gl.bindFramebuffer(gl.FRAMEBUFFER, FBO1);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture1, 0);
-
-var FBO_RK4_K1 = gl.createFramebuffer();
-gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K1);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_rk4_k1, 0);
-var FBO_RK4_K2 = gl.createFramebuffer();
-gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K2);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_rk4_k2, 0);
-var FBO_RK4_K3 = gl.createFramebuffer();
-gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K3);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_rk4_k3, 0);
-var FBO_RK4_K4 = gl.createFramebuffer();
-gl.bindFramebuffer(gl.FRAMEBUFFER, FBO_RK4_K4);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_rk4_k4, 0);
+var FBO_PSI1_RE = makeFBO(texture_psi1_re);
+var FBO_PSI1_IM = makeFBO(texture_psi1_im);
+var FBO_PSI2_RE = makeFBO(texture_psi2_re);
+var FBO_PSI2_IM = makeFBO(texture_psi2_im);
+var FBO_K1_RE = makeFBO(texture_k1_re);
+var FBO_K1_IM = makeFBO(texture_k1_im);
+var FBO_K2_RE = makeFBO(texture_k2_re);
+var FBO_K2_IM = makeFBO(texture_k2_im);
+var FBO_K3_RE = makeFBO(texture_k3_re);
+var FBO_K3_IM = makeFBO(texture_k3_im);
+var FBO_K4_RE = makeFBO(texture_k4_re);
+var FBO_K4_IM = makeFBO(texture_k4_im);
 
 if( gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
     alert("FRAMEBUFFER not complete");
 
 //RK4 calculations
 gl.useProgram(prog);
-var sampLoc  = gl.getUniformLocation(prog, "samp");
-var samp_kLoc  = gl.getUniformLocation(prog, "samp_k");
-var kstepLoc  = gl.getUniformLocation(prog, "kstep");
-gl.uniform1f(gl.getUniformLocation(prog, "dt"), 0.01);
-gl.uniform1f(gl.getUniformLocation(prog, "dx2"), dx*dx);
-gl.uniform1f(gl.getUniformLocation(prog, "gamma"), 0.03);
+var psi_re = gl.getUniformLocation(prog, "psi_re");
+var psi_im = gl.getUniformLocation(prog, "psi_im");
+var k_re  = gl.getUniformLocation(prog, "k_re");
+var k_im  = gl.getUniformLocation(prog, "k_im");
+var kstep  = gl.getUniformLocation(prog, "kstep");
+var reim  = gl.getUniformLocation(prog, "reim");
+gl.uniform1f(gl.getUniformLocation(prog, "dt"), dt);
+gl.uniform1f(gl.getUniformLocation(prog, "dx2"), dx);
+gl.uniform1f(gl.getUniformLocation(prog, "gamma"), gamma);
 gl.uniform1i(gl.getUniformLocation(prog, "addPot"), 0);
 gl.uniform1f(gl.getUniformLocation(prog, "addPot_x"), 0);
 gl.uniform1f(gl.getUniformLocation(prog, "addPot_y"), 0);
@@ -236,21 +258,33 @@ gl.uniform1f(gl.getUniformLocation(prog, "addPot_r"), 3);
 
 //Time step
 gl.useProgram(prog_step);
-var samp_stepLoc  = gl.getUniformLocation(prog_step, "samp");
-gl.uniform1i(gl.getUniformLocation(prog_step, "samp_k1"), 2);
-gl.uniform1i(gl.getUniformLocation(prog_step, "samp_k2"), 3);
-gl.uniform1i(gl.getUniformLocation(prog_step, "samp_k3"), 4);
-gl.uniform1i(gl.getUniformLocation(prog_step, "samp_k4"), 5);
+var step_psi_re  = gl.getUniformLocation(prog_step, "psi_re");
+var step_psi_im  = gl.getUniformLocation(prog_step, "psi_im");
+var step_reim  = gl.getUniformLocation(prog_step, "reim");
+gl.uniform1i(gl.getUniformLocation(prog_step, "k1_re"), 4);
+gl.uniform1i(gl.getUniformLocation(prog_step, "k1_im"), 5);
+gl.uniform1i(gl.getUniformLocation(prog_step, "k2_re"), 6);
+gl.uniform1i(gl.getUniformLocation(prog_step, "k2_im"), 7);
+gl.uniform1i(gl.getUniformLocation(prog_step, "k3_re"), 8);
+gl.uniform1i(gl.getUniformLocation(prog_step, "k3_im"), 9);
+gl.uniform1i(gl.getUniformLocation(prog_step, "k4_re"), 10);
+gl.uniform1i(gl.getUniformLocation(prog_step, "k4_im"), 11);
 gl.uniform1i(gl.getUniformLocation(prog_step, "addVortex"), 0);
 gl.uniform1f(gl.getUniformLocation(prog_step, "addVortex_x"), 0);
 gl.uniform1f(gl.getUniformLocation(prog_step, "addVortex_y"), 0);
 gl.uniform1i(gl.getUniformLocation(prog_step, "reset"), 0);
 
 
+gl.useProgram(prog_show);
+gl.uniform1i(gl.getUniformLocation(prog_show, "psi_re"), 2);
+gl.uniform1i(gl.getUniformLocation(prog_show, "psi_im"), 3);
+
+
 var scale = ((window.innerHeight<window.innerWidth)?window.innerHeight:window.innerWidth)/1.5;
+$("#GPE").css("height",scale);
+
 var isDragging = false;
 var isDown = false;
-
 $("#GPE")
 .mousedown(function() {
     isDragging = false;
@@ -293,16 +327,10 @@ $("#GPE").contextmenu(function(e) {
     return false;
 });
 
-$("#GPE").css("height",scale);
-
-
 var gui = new dat.GUI();
-var gamma = 0.01;
-var dt = 0.05;
-var pot_r = 3;
 var boundary = 'reflective';
-var gammaController = gui.add(window, 'gamma',0,0.5).step(0.001);
-var dtController = gui.add(window, 'dt',0,0.06).step(0.001);
+var gammaController = gui.add(window, 'gamma',0,0.5).step(0.01);
+var dtController = gui.add(window, 'dt',0,0.2).step(0.01);
 var pot_rController = gui.add(window, 'pot_r',0,30).step(1);
 var boundaryController = gui.add(window, 'boundary', ['periodic', 'reflective']);
 
@@ -312,7 +340,6 @@ var obj = { reset:function(){
 }};
 
 gui.add(obj,'reset');
-
 
 gammaController.onChange(function(value) {
     gl.useProgram(prog);
@@ -361,6 +388,36 @@ boundaryController.onChange(function(value) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.activeTexture(gl.TEXTURE6);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.activeTexture(gl.TEXTURE7);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.activeTexture(gl.TEXTURE8);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.activeTexture(gl.TEXTURE9);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.activeTexture(gl.TEXTURE10);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.activeTexture(gl.TEXTURE11);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     } else { 
         gl.activeTexture(gl.TEXTURE0);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -388,6 +445,36 @@ boundaryController.onChange(function(value) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
         gl.activeTexture(gl.TEXTURE5);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+        gl.activeTexture(gl.TEXTURE6);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+        gl.activeTexture(gl.TEXTURE7);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+        gl.activeTexture(gl.TEXTURE8);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+        gl.activeTexture(gl.TEXTURE9);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+        gl.activeTexture(gl.TEXTURE10);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+        gl.activeTexture(gl.TEXTURE11);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
