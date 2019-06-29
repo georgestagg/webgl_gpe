@@ -272,7 +272,7 @@ gl.uniform1i(gl.getUniformLocation(prog_step, "k4_im"), 11);
 gl.uniform1i(gl.getUniformLocation(prog_step, "addVortex"), 0);
 gl.uniform1f(gl.getUniformLocation(prog_step, "addVortex_x"), 0);
 gl.uniform1f(gl.getUniformLocation(prog_step, "addVortex_y"), 0);
-gl.uniform1i(gl.getUniformLocation(prog_step, "reset"), 0);
+gl.uniform1i(gl.getUniformLocation(prog_step, "reset"), 1);
 
 
 gl.useProgram(prog_show);
