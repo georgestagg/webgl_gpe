@@ -14,18 +14,18 @@
     </script>
     <script id="shader-fs-show" type="x-shader/x-fragment">
         precision highp float;
-        uniform sampler2D psi_re;
-        uniform sampler2D psi_im;
+        precision highp sampler2D;
+        uniform sampler2D s_psi;
         varying vec2 vTexCoord;
         float cmpxmag(in vec2 c) {
             return sqrt(c.x * c.x + c.y * c.y);
         }
-        float unpackFloat( vec4 rgba ) {
-            const vec4 bitSh = vec4( 1.0 / ( 256.0 * 256.0 * 256.0 ), 1.0 / ( 256.0 * 256.0 ), 1.0 / 256.0, 1.0 );
-            return dot( rgba, bitSh )*5. - 2.5;
+        vec2 unpackCmpx( in vec4 rgba ) {
+            vec2 bitSh = vec2( 0.00390625, 1.0 );
+            return vec2(dot(rgba.xy,bitSh),dot(rgba.zw, bitSh))*5. - 2.5;
         }
         void main(void) {
-            vec2 psi = vec2(unpackFloat(texture2D(psi_re, vTexCoord)),unpackFloat(texture2D(psi_im, vTexCoord)));
+            vec2 psi = unpackCmpx(texture2D(s_psi, vTexCoord));
             float i = cmpxmag(psi);
             float a = atan(psi.y, psi.x)*.955 + 3.;
             gl_FragColor = vec4(i*clamp(abs(a - 3.) - 1., 0., 1.),i*clamp(2. - abs(a - 2.), 0., 1.),i*clamp(2. - abs(a - 4.), 0., 1.), 1.);
@@ -43,12 +43,10 @@
     </script>
     <script id="shader-fs-dpsi" type="x-shader/x-fragment">
         precision highp float;
-        uniform sampler2D psi_re;
-        uniform sampler2D psi_im;
-        uniform sampler2D k_re;
-        uniform sampler2D k_im;
+        precision highp sampler2D;
+        uniform sampler2D s_psi;
+        uniform sampler2D s_k;
         uniform int kstep;
-        uniform int reim;
         uniform int addPot;
         uniform float addPot_x;
         uniform float addPot_y;
@@ -58,43 +56,36 @@
         uniform float gamma;
         varying vec2 vTexCoord;
         const float d = 1./256.;
-        vec4 packFloat( float value ) {
-            const vec4 bit_shift = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
-            const vec4 bit_mask = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );
+        vec4 packCmpx( in vec2 value ) {
+            const vec4 bit_mask = vec4( 0.0, 0.00390625, 0.00390625, 0.00390625 );
             value = (value + 2.5)/5.;
-            vec4 res = mod( value * bit_shift * vec4( 255 ), vec4( 256 ) ) / vec4( 255 );
-            res -= res.xxyz * bit_mask;
-            return res;
+            vec4 res1 = mod( value.x * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
+            res1 -= res1.xxyz * bit_mask;
+            vec4 res2 = mod( value.y * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
+            res2 -= res2.xxyz * bit_mask;
+            return vec4(res1.zw,res2.zw);
         }
-        float unpackFloat( vec4 rgba ) {
-            const vec4 bitSh = vec4( 1.0 / ( 256.0 * 256.0 * 256.0 ), 1.0 / ( 256.0 * 256.0 ), 1.0 / 256.0, 1.0 );
-            return dot( rgba, bitSh )*5. - 2.5;
+        vec2 unpackCmpx( in vec4 rgba ) {
+            vec2 bitSh = vec2( 0.00390625, 1.0 );
+            return vec2(dot(rgba.xy,bitSh),dot(rgba.zw, bitSh))*5. - 2.5;
         }
         vec2 cmpxmul(in vec2 a, in vec2 b) {
             return vec2(a.x * b.x - a.y * b.y, a.y * b.x + a.x * b.y);
         }
         void main(void) {
             vec2 eye = vec2(0., 1.);
-            vec2 psi = vec2(unpackFloat(texture2D(psi_re, vTexCoord)), unpackFloat(texture2D(psi_im, vTexCoord)));
-            vec2 psi_pdy = vec2(unpackFloat(texture2D(psi_re, vec2(vTexCoord.x, vTexCoord.y + d))),
-                            unpackFloat(texture2D(psi_im, vec2(vTexCoord.x, vTexCoord.y + d))));
-            vec2 psi_mdy = vec2(unpackFloat(texture2D(psi_re, vec2(vTexCoord.x, vTexCoord.y - d))),
-                            unpackFloat(texture2D(psi_im, vec2(vTexCoord.x, vTexCoord.y - d))));
-            vec2 psi_pdx = vec2(unpackFloat(texture2D(psi_re, vec2(vTexCoord.x + d, vTexCoord.y))),
-                            unpackFloat(texture2D(psi_im, vec2(vTexCoord.x + d, vTexCoord.y))));
-            vec2 psi_mdx = vec2(unpackFloat(texture2D(psi_re, vec2(vTexCoord.x - d, vTexCoord.y))),
-                            unpackFloat(texture2D(psi_im, vec2(vTexCoord.x - d, vTexCoord.y))));
+            vec2 psi = unpackCmpx(texture2D(s_psi, vTexCoord));
+            vec2 psi_pdy = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x, vTexCoord.y + d)));
+            vec2 psi_mdy = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x, vTexCoord.y - d)));
+            vec2 psi_pdx = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x + d, vTexCoord.y)));
+            vec2 psi_mdx = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x - d, vTexCoord.y)));
 
             if (kstep > 1){
-                vec2 k = vec2(unpackFloat(texture2D(k_re, vTexCoord)), unpackFloat(texture2D(k_im, vTexCoord)));
-                vec2 k_pdy = vec2(unpackFloat(texture2D(k_re, vec2(vTexCoord.x, vTexCoord.y + d))),
-                                unpackFloat(texture2D(k_im, vec2(vTexCoord.x, vTexCoord.y + d))));
-                vec2 k_mdy = vec2(unpackFloat(texture2D(k_re, vec2(vTexCoord.x, vTexCoord.y - d))),
-                                unpackFloat(texture2D(k_im, vec2(vTexCoord.x, vTexCoord.y - d))));
-                vec2 k_pdx = vec2(unpackFloat(texture2D(k_re, vec2(vTexCoord.x + d, vTexCoord.y))),
-                                unpackFloat(texture2D(k_im, vec2(vTexCoord.x + d, vTexCoord.y))));
-                vec2 k_mdx = vec2(unpackFloat(texture2D(k_re, vec2(vTexCoord.x - d, vTexCoord.y))),
-                                unpackFloat(texture2D(k_im, vec2(vTexCoord.x - d, vTexCoord.y))));
+                vec2 k = unpackCmpx(texture2D(s_k, vTexCoord));
+                vec2 k_pdy = unpackCmpx(texture2D(s_k, vec2(vTexCoord.x, vTexCoord.y + d)));
+                vec2 k_mdy = unpackCmpx(texture2D(s_k, vec2(vTexCoord.x, vTexCoord.y - d)));
+                vec2 k_pdx = unpackCmpx(texture2D(s_k, vec2(vTexCoord.x + d, vTexCoord.y)));
+                vec2 k_mdx = unpackCmpx(texture2D(s_k, vec2(vTexCoord.x - d, vTexCoord.y)));
                 if (kstep == 4){
                     psi += k;
                     psi_pdy += k_pdy;
@@ -112,61 +103,51 @@
 
             vec2 dpsi_H = -0.5*(psi_pdy + psi_mdy + psi_pdx + psi_mdx - 4.*psi)/dx2  + (psi.x*psi.x + psi.y*psi.y)*psi - psi;
             if(addPot > 0){
-                dpsi_H += 20.*exp(-64.*64.*(vTexCoord.x-addPot_x)*(vTexCoord.x-addPot_x)/addPot_r 
+                dpsi_H += 5.*exp(-64.*64.*(vTexCoord.x-addPot_x)*(vTexCoord.x-addPot_x)/addPot_r 
                             - 64.*64.*(vTexCoord.y-addPot_y)*(vTexCoord.y-addPot_y)/addPot_r)*psi;
             }
             vec2 dpsi = cmpxmul(dpsi_H,-gamma-eye)*dt;
-
-            if(reim == 0){
-                gl_FragColor = packFloat(dpsi.x);
-            } else {
-                gl_FragColor = packFloat(dpsi.y);
-            }
+            gl_FragColor = packCmpx(dpsi);
         }
     </script>
     <script id="shader-fs-step" type="x-shader/x-fragment">
         precision highp float;
-        uniform sampler2D psi_re;
-        uniform sampler2D psi_im;
-        uniform sampler2D k1_re;
-        uniform sampler2D k1_im;
-        uniform sampler2D k2_re;
-        uniform sampler2D k2_im;
-        uniform sampler2D k3_re;
-        uniform sampler2D k3_im;
-        uniform sampler2D k4_re;
-        uniform sampler2D k4_im;
-        uniform int reim;
+        precision highp sampler2D;
+        uniform sampler2D s_psi;
+        uniform sampler2D s_k1;
+        uniform sampler2D s_k2;
+        uniform sampler2D s_k3;
+        uniform sampler2D s_k4;
         uniform int addVortex;
         uniform int reset;
         uniform float addVortex_x;
         uniform float addVortex_y;
         varying vec2 vTexCoord;
         const float d = 1./256.;
-        vec4 packFloat( float value ) {
-            const vec4 bit_shift = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
-            const vec4 bit_mask = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );
+        vec4 packCmpx( in vec2 value ) {
+            const vec4 bit_mask = vec4( 0.0, 0.00390625, 0.00390625, 0.00390625 );
             value = (value + 2.5)/5.;
-            vec4 res = mod( value * bit_shift * vec4( 255 ), vec4( 256 ) ) / vec4( 255 );
-            res -= res.xxyz * bit_mask;
-            return res;
+            vec4 res1 = mod( value.x * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
+            res1 -= res1.xxyz * bit_mask;
+            vec4 res2 = mod( value.y * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
+            res2 -= res2.xxyz * bit_mask;
+            return vec4(res1.zw,res2.zw);
         }
-        float unpackFloat( vec4 rgba ) {
-            const vec4 bitSh = vec4( 1.0 / ( 256.0 * 256.0 * 256.0 ), 1.0 / ( 256.0 * 256.0 ), 1.0 / 256.0, 1.0 );
-            return dot( rgba, bitSh )*5. - 2.5;
+        vec2 unpackCmpx( in vec4 rgba ) {
+            vec2 bitSh = vec2( 0.00390625, 1.0 );
+            return vec2(dot(rgba.xy,bitSh),dot(rgba.zw, bitSh))*5. - 2.5;
         }
         vec2 cmpxmul(in vec2 a, in vec2 b) {
             return vec2(a.x * b.x - a.y * b.y, a.y * b.x + a.x * b.y);
         }
         void main(void) {
-            vec2 psi = vec2(unpackFloat(texture2D(psi_re, vTexCoord)), unpackFloat(texture2D(psi_im, vTexCoord)));
-            vec2 k1 = vec2(unpackFloat(texture2D(k1_re, vTexCoord)), unpackFloat(texture2D(k1_im, vTexCoord)));
-            vec2 k2 = vec2(unpackFloat(texture2D(k2_re, vTexCoord)), unpackFloat(texture2D(k2_im, vTexCoord)));
-            vec2 k3 = vec2(unpackFloat(texture2D(k3_re, vTexCoord)), unpackFloat(texture2D(k3_im, vTexCoord)));
-            vec2 k4 = vec2(unpackFloat(texture2D(k4_re, vTexCoord)), unpackFloat(texture2D(k4_im, vTexCoord)));
+            vec2 psi = unpackCmpx(texture2D(s_psi, vTexCoord));
+            vec2 k1 = unpackCmpx(texture2D(s_k1, vTexCoord));
+            vec2 k2 = unpackCmpx(texture2D(s_k2, vTexCoord));
+            vec2 k3 = unpackCmpx(texture2D(s_k3, vTexCoord));
+            vec2 k4 = unpackCmpx(texture2D(s_k4, vTexCoord));
 
             vec2 psi_new = psi + k1/6. + k2/3. + k3/3. + k4/6.;
-            //psi_new = psi;
             if (addVortex==1){
                 psi_new = cmpxmul(psi_new,vec2(cos(atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x)),
                             -sin(atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x))));
@@ -175,22 +156,18 @@
                             -sin(-atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x))));
             }
             if (reset==1){
-                psi_new = vec2(0.99,0.0);
+                psi_new = vec2(1.0,0.0);
             }
-            if(reim == 0){
-                gl_FragColor = packFloat(psi_new.x);
-            } else {
-                gl_FragColor = packFloat(psi_new.y);
-            }
+            gl_FragColor = packCmpx(psi_new);
         }
     </script>
   </head>
   <body>
     <h1>WebGL GPE</h1>
     <canvas id="GPE" width="256" height="256"></canvas><br>
-    <img src="gpe.svg" width="50%">
+    <img src="gpe.svg" width="65%">
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="dat.gui.js"></script>
-    <script src="gpe.js?v=0.04"></script>
+    <script src="gpe.js?v=0.06"></script>
   </body>
 </html>
