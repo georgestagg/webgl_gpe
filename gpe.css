@@ -3,7 +3,6 @@ html, body {
   height: 100%;
   overflow: hidden;
   margin: 0;
-  padding-top: 1em;
   text-align: center;
   background-color: #111;
 }
@@ -12,11 +11,28 @@ img{
   padding: 1em;
 }
 
-h1{
+ a:link {
   color: #EEE;
-  font-family: Impact, 'Arial Narrow Bold', sans-serif;
+}
+
+a:visited {
+  color: #EEE;
+}
+
+a:hover {
+  color: #BBB;
+}
+
+a:active {
+  color: #EEE;
+} 
+
+h1, h2, h3{
+  color: #EEE;
+  margin: 0.5em;
+  font-family: 'Arial Narrow Bold', sans-serif;
 }
 credit{
   color: #EEE;
-  font-family: Impact, 'Arial Narrow Bold', sans-serif;
+  font-family: 'Arial Narrow Bold', sans-serif;
 }

@@ -29,7 +29,6 @@
             float i = cmpxmag(psi);
             float a = atan(psi.y, psi.x)*.955 + 3.;
             gl_FragColor = vec4(i*clamp(abs(a - 3.) - 1., 0., 1.),i*clamp(2. - abs(a - 2.), 0., 1.),i*clamp(2. - abs(a - 4.), 0., 1.), 1.);
-            //gl_FragColor = vec4(psi.y,0.,0.,1.);
         }
     </script>
     <script id="shader-vs" type="x-shader/x-vertex">
@@ -57,13 +56,14 @@
         varying vec2 vTexCoord;
         const float d = 1./256.;
         vec4 packCmpx( in vec2 value ) {
-            const vec4 bit_mask = vec4( 0.0, 0.00390625, 0.00390625, 0.00390625 );
+            const vec2 bit_mask = vec2( 0.0, 0.00390625 );
+            const vec2 mult_vec = vec2( 65280.0, 255.0 );
             value = (value + 2.5)/5.;
-            vec4 res1 = mod( value.x * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
-            res1 -= res1.xxyz * bit_mask;
-            vec4 res2 = mod( value.y * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
-            res2 -= res2.xxyz * bit_mask;
-            return vec4(res1.zw,res2.zw);
+            vec2 res1 = mod( value.x * mult_vec, vec2( 256 ) ) / vec2( 255 );
+            vec2 res2 = mod( value.y * mult_vec, vec2( 256 ) ) / vec2( 255 );
+            res1 -= res1.xx * bit_mask;
+            res2 -= res2.xx * bit_mask;
+            return vec4(res1,res2);
         }
         vec2 unpackCmpx( in vec4 rgba ) {
             vec2 bitSh = vec2( 0.00390625, 1.0 );
@@ -125,13 +125,14 @@
         varying vec2 vTexCoord;
         const float d = 1./256.;
         vec4 packCmpx( in vec2 value ) {
-            const vec4 bit_mask = vec4( 0.0, 0.00390625, 0.00390625, 0.00390625 );
+            const vec2 bit_mask = vec2( 0.0, 0.00390625 );
+            const vec2 mult_vec = vec2( 65280.0, 255.0 );
             value = (value + 2.5)/5.;
-            vec4 res1 = mod( value.x * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
-            res1 -= res1.xxyz * bit_mask;
-            vec4 res2 = mod( value.y * vec4( 4278190080.0, 16711680.0, 65280.0, 255.0 ), vec4( 256 ) ) / vec4( 255 );
-            res2 -= res2.xxyz * bit_mask;
-            return vec4(res1.zw,res2.zw);
+            vec2 res1 = mod( value.x * mult_vec, vec2( 256 ) ) / vec2( 255 );
+            vec2 res2 = mod( value.y * mult_vec, vec2( 256 ) ) / vec2( 255 );
+            res1 -= res1.xx * bit_mask;
+            res2 -= res2.xx * bit_mask;
+            return vec4(res1,res2);
         }
         vec2 unpackCmpx( in vec4 rgba ) {
             vec2 bitSh = vec2( 0.00390625, 1.0 );
@@ -164,8 +165,9 @@
   </head>
   <body>
     <h1>WebGL GPE</h1>
+    <h3>A demo by <a href="https://gwstagg.co.uk">George Stagg</a></h3>
     <canvas id="GPE" width="256" height="256"></canvas><br>
-    <img src="gpe.svg" width="65%">
+    <img src="gpe.svg" width="60%">
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="dat.gui.js"></script>
     <script src="gpe.js?v=0.06"></script>
