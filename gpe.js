@@ -126,6 +126,7 @@ function draw(){
 var n = 256;
 var dx = 0.5;
 var gamma = 0.01;
+var angular_momentum = 0;
 var dt = 0.1;
 var pot_r = 3;
 var trap = false;
@@ -281,10 +282,11 @@ $("#GPE").contextmenu(function(e) {
 var gui = new dat.GUI();
 var boundary = 'reflective';
 var gammaController = gui.add(window, 'gamma',0,0.3).step(0.001);
+var ang_momController = gui.add(window, 'angular_momentum',-2,2).step(0.05);
 var dtController = gui.add(window, 'dt',0,0.14).step(0.01);
 var pot_rController = gui.add(window, 'pot_r',0,30).step(1);
 var boundaryController = gui.add(window, 'boundary', ['periodic', 'reflective']);
-
+ 
 gui.add(window, 'trap').onChange(function (value) {
     gl.useProgram(prog);
     gl.uniform1i(gl.getUniformLocation(prog, "addTrap"), value);
@@ -307,6 +309,11 @@ gammaController.onChange(function(value) {
     gl.useProgram(prog);
     gl.uniform1f(gl.getUniformLocation(prog, "gamma"), value);
 });
+ang_momController.onChange(function(value) {
+    gl.useProgram(prog);
+    gl.uniform1f(gl.getUniformLocation(prog, "ang_mom"), value+5);
+});
+
 
 dtController.onChange(function(value) {
     gl.useProgram(prog);

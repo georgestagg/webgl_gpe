@@ -59,6 +59,7 @@
         uniform float dx2;
         uniform float dt;
         uniform float gamma;
+        uniform float ang_mom;
         varying vec2 vTexCoord;
         const float d = 1./256.;
         vec4 packCmpx( in vec2 value ) {
@@ -113,9 +114,13 @@
                             - 64.*64.*(vTexCoord.y-addPot_y)*(vTexCoord.y-addPot_y)/addPot_r)*psi;
             }
             if(addTrap > 0){
-                dpsi_H += 10.*((vTexCoord.x-0.5)*(vTexCoord.x-0.5) + (vTexCoord.y-0.5)*(vTexCoord.y-0.5))*psi;
+                dpsi_H += 10.*((1.01*vTexCoord.x-0.5)*(1.01*vTexCoord.x-0.5) + (vTexCoord.y-0.5)*(vTexCoord.y-0.5))*psi;
             }
-            vec2 dpsi = cmpxmul(dpsi_H,-gamma-eye)*dt;
+            if(ang_mom > 0.001){
+                dpsi_H += cmpxmul(-eye,(ang_mom-5.)*((vTexCoord.y-0.5)*(psi_pdx - psi_mdx) - (vTexCoord.x-0.5)*(psi_pdy-psi_mdy)))/sqrt(dx2);
+            }
+            vec2 dpsi;
+            dpsi = cmpxmul(dpsi_H,-gamma-eye)*dt;        
             gl_FragColor = packCmpx(dpsi);
         }
     </script>
