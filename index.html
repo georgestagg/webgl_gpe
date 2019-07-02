@@ -47,6 +47,7 @@
         uniform sampler2D s_k;
         uniform int kstep;
         uniform int addPot;
+        uniform int addTrap;
         uniform float addPot_x;
         uniform float addPot_y;
         uniform float addPot_r;
@@ -105,6 +106,9 @@
             if(addPot > 0){
                 dpsi_H += 5.*exp(-64.*64.*(vTexCoord.x-addPot_x)*(vTexCoord.x-addPot_x)/addPot_r 
                             - 64.*64.*(vTexCoord.y-addPot_y)*(vTexCoord.y-addPot_y)/addPot_r)*psi;
+            }
+            if(addTrap > 0){
+                dpsi_H += 10.*((vTexCoord.x-0.5)*(vTexCoord.x-0.5) + (vTexCoord.y-0.5)*(vTexCoord.y-0.5))*psi;
             }
             vec2 dpsi = cmpxmul(dpsi_H,-gamma-eye)*dt;
             gl_FragColor = packCmpx(dpsi);

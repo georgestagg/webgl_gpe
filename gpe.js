@@ -128,6 +128,7 @@ var dx = 0.5;
 var gamma = 0.01;
 var dt = 0.1;
 var pot_r = 3;
+var trap = false;
 var pix = new Uint8Array(4*n*n);
 
 function setReflective(gl_tex){
@@ -276,12 +277,19 @@ var dtController = gui.add(window, 'dt',0,0.14).step(0.01);
 var pot_rController = gui.add(window, 'pot_r',0,30).step(1);
 var boundaryController = gui.add(window, 'boundary', ['periodic', 'reflective']);
 
+gui.add(window, 'trap').onChange(function (value) {
+    gl.useProgram(prog);
+    gl.uniform1i(gl.getUniformLocation(prog, "addTrap"), value);
+}); 
+
+
 var obj = { reset:function(){ 
     gl.useProgram(prog_step);
     gl.uniform1i(gl.getUniformLocation(prog_step, "reset"), 1);
 }};
 
 gui.add(obj,'reset');
+
 
 gammaController.onChange(function(value) {
     gl.useProgram(prog);
