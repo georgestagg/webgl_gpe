@@ -129,6 +129,7 @@ var gamma = 0.01;
 var dt = 0.1;
 var pot_r = 3;
 var trap = false;
+var show_phase = true;
 var pix = new Uint8Array(4*n*n);
 
 function setReflective(gl_tex){
@@ -205,6 +206,7 @@ gl.uniform1i(gl.getUniformLocation(prog_step, "reset"), 1);
 
 gl.useProgram(prog_show);
 gl.uniform1i(gl.getUniformLocation(prog_show, "psi"), 1);
+gl.uniform1i(gl.getUniformLocation(prog_show, "showPhase"), show_phase);
 
 var scale = ((window.innerHeight<window.innerWidth)?window.innerHeight/1.3:window.innerWidth)/1.2;
 $("#GPE").css("height",scale);
@@ -280,6 +282,10 @@ var boundaryController = gui.add(window, 'boundary', ['periodic', 'reflective'])
 gui.add(window, 'trap').onChange(function (value) {
     gl.useProgram(prog);
     gl.uniform1i(gl.getUniformLocation(prog, "addTrap"), value);
+}); 
+gui.add(window, 'show_phase').onChange(function (value) {
+    gl.useProgram(prog_show);
+    gl.uniform1i(gl.getUniformLocation(prog_show, "showPhase"), value);
 }); 
 
 

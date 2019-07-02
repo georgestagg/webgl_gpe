@@ -16,6 +16,7 @@
         precision highp float;
         precision highp sampler2D;
         uniform sampler2D s_psi;
+        uniform int showPhase;
         varying vec2 vTexCoord;
         float cmpxmag(in vec2 c) {
             return sqrt(c.x * c.x + c.y * c.y);
@@ -28,7 +29,11 @@
             vec2 psi = unpackCmpx(texture2D(s_psi, vTexCoord));
             float i = cmpxmag(psi);
             float a = atan(psi.y, psi.x)*.955 + 3.;
-            gl_FragColor = vec4(i*clamp(abs(a - 3.) - 1., 0., 1.),i*clamp(2. - abs(a - 2.), 0., 1.),i*clamp(2. - abs(a - 4.), 0., 1.), 1.);
+            if (showPhase == 1){
+                gl_FragColor = vec4(pow(i,2.)*clamp(abs(a - 3.) - 1., 0., 1.),pow(i,2.)*clamp(2. - abs(a - 2.), 0., 1.),pow(i,2.)*clamp(2. - abs(a - 4.), 0., 1.), 1.);
+            } else {
+                gl_FragColor = vec4(pow(i,2.), pow(i,2.), pow(i,2.), 1.);
+            }
         }
     </script>
     <script id="shader-vs" type="x-shader/x-vertex">
