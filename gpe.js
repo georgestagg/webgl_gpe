@@ -261,6 +261,12 @@ $("#GPE")
         gl.uniform1f(gl.getUniformLocation(prog_step, "addVortex_y"), (scale-y)/scale);
     }
 });
+$("body").mouseup(function(e) {
+    isDragging = false;
+    isDown = false;
+    gl.useProgram(prog);
+    gl.uniform1i(gl.getUniformLocation(prog, "addPot"), 0);
+});
 $("#GPE").contextmenu(function(e) {
     isDragging = true;
     var x = (e.offsetX != null) ? e.offsetX : e.originalEvent.layerX;

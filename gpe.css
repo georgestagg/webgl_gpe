@@ -5,6 +5,7 @@ html, body {
   margin: 0;
   text-align: center;
   background-color: #111;
+  touch-action: none;
 }
 
 img{
