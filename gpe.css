@@ -1,39 +1,51 @@
 html, body {
   width:  100%;
   height: 100%;
-  overflow: hidden;
-  margin: 0;
-  text-align: center;
-  background-color: #111;
+  margin: 0.5em 0em;
+  background-color: #F0F0F0;
   touch-action: none;
+  color: #111;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 img{
   padding: 1em;
 }
 
- a:link {
-  color: #EEE;
+a:link {
+  color: #111;
 }
 
 a:visited {
-  color: #EEE;
+  color: #111;
 }
 
 a:hover {
-  color: #BBB;
+  color: #444;
 }
 
 a:active {
-  color: #EEE;
+  color: #111;
 } 
 
 h1, h2, h3{
-  color: #EEE;
-  margin: 0.5em;
-  font-family: 'Arial Narrow Bold', sans-serif;
+  margin: 0.25em 0em;
 }
-credit{
-  color: #EEE;
-  font-family: 'Arial Narrow Bold', sans-serif;
+
+.container {
+  margin:  0em 5em;
+}
+
+.canvas-container {
+  text-align: center;
+}
+
+.info-text {
+  font-size: 120%;
+}
+
+#GUI {
+  position: absolute;
+  top: 0px;
+  right: 0px
 }
