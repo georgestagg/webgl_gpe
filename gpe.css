@@ -1,23 +1,19 @@
 html, body {
   width:  100%;
   height: 100%;
-  margin: 0.5em 0em;
+  margin: 0;
   background-color: #F0F0F0;
-  touch-action: none;
   color: #111;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-img{
-  padding: 1em;
+  overflow-x: hidden;
 }
 
 a:link {
-  color: #111;
+  color: #222;
 }
 
 a:visited {
-  color: #111;
+  color: #222;
 }
 
 a:hover {
@@ -25,27 +21,44 @@ a:hover {
 }
 
 a:active {
-  color: #111;
+  color: #222;
 } 
 
 h1, h2, h3{
-  margin: 0.25em 0em;
+  margin: 0.2em 0;
 }
 
-.container {
-  margin:  0em 5em;
+@media only screen and (max-width: 600px) {
+  h1 {
+    font-size: 150%;
+  }
+  h2 {
+    font-size: 120%;
+  }
+  h3 {
+    font-size: 110%;
+  }
 }
 
-.canvas-container {
-  text-align: center;
-}
 
-.info-text {
-  font-size: 120%;
+.GUI-container{
+  position: relative;
+  width: 100%;
+  height: 15px;
 }
 
 #GUI {
   position: absolute;
   top: 0px;
-  right: 0px
+  right: 0px;
 }
+
+.upper-container {
+  text-align: center;
+}
+
+.lower-container {
+  padding-left: 5%;
+  padding-right: 5%;
+}
+

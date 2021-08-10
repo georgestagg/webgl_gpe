@@ -111,6 +111,7 @@ class GPE {
         this.prog_step_addVortex  = gl.getUniformLocation(prog_step, 'addVortex');
         this.prog_step_reset  = gl.getUniformLocation(prog_step, 'reset');
         this.prog_step_quench  = gl.getUniformLocation(prog_step, 'quench');
+        this.prog_step_randVort  = gl.getUniformLocation(prog_step, 'randVort');
         gl.uniform1i(gl.getUniformLocation(prog_step, 's_k1'), 2);
         gl.uniform1i(gl.getUniformLocation(prog_step, 's_k2'), 3);
         gl.uniform1i(gl.getUniformLocation(prog_step, 's_k3'), 4);
@@ -120,7 +121,8 @@ class GPE {
         gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_y'), this.opts['addVortex']['y']);
         gl.uniform1i(this.prog_step_addVortex, 0);
         gl.uniform1i(this.prog_step_reset, 1);
-        gl.uniform1i(this.prog_step_quench, 1);
+        gl.uniform1i(this.prog_step_quench, 0);
+        gl.uniform1i(this.prog_step_randVort, Math.floor(Math.random() * 256));
         
         // Initialise the display output shader parameters
         gl.useProgram(prog_show);
@@ -161,6 +163,7 @@ class GPE {
             gl.uniform1i(this.prog_step_addVortex, 0);
             gl.uniform1i(this.prog_step_reset, 0);
             gl.uniform1i(this.prog_step_quench, 0);
+            gl.uniform1i(this.prog_step_randVort, 0);
 
             // Second RK4 pass
             gl.useProgram(this.prog_rk4);
@@ -201,7 +204,7 @@ class GPE {
 
     changeBoundary(value){
         var gl = this.gl;
-        if(value == 'periodic'){
+        if(value == 'Periodic'){
             this.setPeriodic(gl.TEXTURE0);
             this.setPeriodic(gl.TEXTURE1);
             this.setPeriodic(gl.TEXTURE2);
@@ -224,7 +227,7 @@ class GPE {
         this.gl = gl = this.canvas.getContext('webgl');
 
         // Scale up the canvas display to fit the window
-        this.scale = ((window.innerHeight < window.innerWidth)?window.innerHeight/1.15:window.innerWidth)/1.15;
+        this.scale = ((window.innerHeight < window.innerWidth)?window.innerHeight/1.1:window.innerWidth)/1.1;
         this.canvas.style.height = this.scale + 'px';
 
         // Set initial simulation parameters
@@ -234,7 +237,7 @@ class GPE {
                 'active': false,
                 'x': 0,
                 'y': 0,
-                'r': 3,
+                'r': 2,
             },
             'addTrap': false,
             'addVortex': {
@@ -242,8 +245,8 @@ class GPE {
                 'x': 0,
                 'y': 0
             },
-            'boundary': 'reflective',
-            'preset': 'box',
+            'boundary': 'Reflective',
+            'preset': 'Box',
             'dt': 0.1,
             'dx2': 0.5*0.5,
             'gamma': 0.01,
@@ -273,92 +276,136 @@ class GPE {
 class UI {
     setupControls(canvas){
         var gl = this.ctx.gl;
-        var prog_show = this.ctx.prog_show;
         var prog_step = this.ctx.prog_step;
         var prog_rk4 = this.ctx.prog_rk4;
         var scale = this.ctx.scale;
 
-        canvas.addEventListener('touchend', function () {
-            gl.useProgram(prog_rk4);
-            gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addPot'), 0);
-        }, false);
 
-        canvas.addEventListener('touchmove', function (e) {
-            var touch = e.touches[0];
-            var rect = canvas.getBoundingClientRect();
-            var x =  touch.clientX - rect.left;
-            var y =  touch.clientY - rect.top;
-            gl.useProgram(prog_rk4);
-            gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addPot'), 1);
-            gl.uniform1f(gl.getUniformLocation(prog_rk4, 'addPot_x'), x/scale);
-            gl.uniform1f(gl.getUniformLocation(prog_rk4, 'addPot_y'), (scale-y)/scale);
-        }, false);
-
-        canvas.addEventListener('mousedown', function() {
+        // Handle touch events
+        // Take note of touch start time
+        canvas.addEventListener('touchstart', function (e) {
             this.isDragging = false;
-            this.isDown = true;
-        });
+            this.lastTouch = e.touches[0];
+            this.ttc = Date.now();
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, false);
 
-        canvas.addEventListener('mousemove', function(e) {
-            this.isDragging = true;
-            if(this.isDown){
+        // If tap and dragging, insert a potential obstacle
+        canvas.addEventListener('touchmove', function (e) {
+            if(Date.now()-this.ttc > 100) this.isDragging = true;
+            this.lastTouch = e.touches[0];
+            var rect = canvas.getBoundingClientRect();
+            var x =  this.lastTouch.clientX - rect.left;
+            var y =  this.lastTouch.clientY - rect.top;
+            if(this.isDragging){
                 gl.useProgram(prog_rk4);
                 gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addPot'), 1);
-                var x = (e.offsetX != null) ? e.offsetX : e.originalEvent.layerX;
-                var y = (e.offsetY != null) ? e.offsetY : e.originalEvent.layerY;
                 gl.uniform1f(gl.getUniformLocation(prog_rk4, 'addPot_x'), x/scale);
                 gl.uniform1f(gl.getUniformLocation(prog_rk4, 'addPot_y'), (scale-y)/scale);
             }
-        });
-        canvas.addEventListener('mouseup', function(e) {
-            var wasDragging = this.isDragging;
-            this.isDragging = false;
-            this.isDown = false;
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, false);
+
+        // Ensure obstacle is remove. If just tapping, insert a vortex. 
+        canvas.addEventListener('touchend', function (e) {
+            var rect = canvas.getBoundingClientRect();
+            var x =  this.lastTouch.clientX - rect.left;
+            var y =  this.lastTouch.clientY - rect.top;
             gl.useProgram(prog_rk4);
             gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addPot'), 0);
-            if (!wasDragging) {
-                var x = (e.offsetX != null) ? e.offsetX : e.originalEvent.layerX;
-                var y = (e.offsetY != null) ? e.offsetY : e.originalEvent.layerY;
+            if (!this.isDragging) {
                 gl.useProgram(prog_step);
                 gl.uniform1i(gl.getUniformLocation(prog_step, 'addVortex'), 1);
                 gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_x'), x/scale);
                 gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_y'), (scale-y)/scale);
             }
+            this.isDragging = false;
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, false);
+
+        // Take note of mouse click time and type
+        document.body.addEventListener('mousedown', function(e) {
+            this.isDragging = false;
+            this.ttc = Date.now();
+            if(e.target == canvas){
+                switch(e.button){
+                case 0:
+                    this.isDown = true;
+                    break;
+                case 2:
+                    this.isRightDown = true;
+                    break;
+                }
+            }
         });
-        canvas.addEventListener('contextmenu', function(e) {
-            this.isDragging = true;
+
+        // Handle inserting potental object on click-and-drag
+        document.body.addEventListener('mousemove', function(e) {
             var x = (e.offsetX != null) ? e.offsetX : e.originalEvent.layerX;
             var y = (e.offsetY != null) ? e.offsetY : e.originalEvent.layerY;
-            gl.useProgram(prog_step);
-            gl.uniform1i(gl.getUniformLocation(prog_step, 'addVortex'), -1);
-            gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_x'), x/scale);
-            gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_y'), (scale-y)/scale);
+            if(Date.now()-this.ttc > 100) this.isDragging = true;
+            if(this.isDown && this.isDragging && e.target == canvas){
+                gl.useProgram(prog_rk4);
+                gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addPot'), 1);
+                gl.uniform1f(gl.getUniformLocation(prog_rk4, 'addPot_x'), x/scale);
+                gl.uniform1f(gl.getUniformLocation(prog_rk4, 'addPot_y'), (scale-y)/scale);
+            }
+        });
+
+        // Handle injecting positive vortex on left click and negative vortex on right click
+        document.body.addEventListener('mouseup', function(e) {
+            gl.useProgram(prog_rk4);
+            gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addPot'), 0);
+            var x = (e.offsetX != null) ? e.offsetX : e.originalEvent.layerX;
+            var y = (e.offsetY != null) ? e.offsetY : e.originalEvent.layerY;
+            if (!this.isDragging && this.isDown && e.target == canvas) {
+                gl.useProgram(prog_step);
+                gl.uniform1i(gl.getUniformLocation(prog_step, 'addVortex'), 1);
+                gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_x'), x/scale);
+                gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_y'), (scale-y)/scale);
+            }
+            if (!this.isDragging && this.isRightDown && e.target == canvas) {
+                gl.useProgram(prog_step);
+                gl.uniform1i(gl.getUniformLocation(prog_step, 'addVortex'), -1);
+                gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_x'), x/scale);
+                gl.uniform1f(gl.getUniformLocation(prog_step, 'addVortex_y'), (scale-y)/scale);
+            }
+            this.isRightDown = false;
+            this.isDown = false;
+            this.isDragging = false;
+        });
+
+        // Disable default right click menu on canvas item        
+        canvas.addEventListener('contextmenu', function() {
             event.preventDefault();
             return false;
         });
-        document.body.addEventListener('mouseup', function() {
-            this.isDragging = false;
-            this.isDown = false;
-            gl.useProgram(prog_rk4);
-            gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addPot'), 0);
-        });
+        
     }
 
     constructor(ctx) {
         this.ctx = ctx;
         this.isDragging = false;
         this.isDown = false;
-
+        this.isRightDown = false;
         var gl = this.ctx.gl;
         var prog_show = this.ctx.prog_show;
         var prog_step = this.ctx.prog_step;
         var prog_rk4 = this.ctx.prog_rk4;
 
-        // Setup the dat GUI parameter controllers
-        var gui = new dat.GUI({width: 320});
+        // Add dat GUI to the DOM. Start full width and closed if on a narrow screen
+        var gui = new dat.GUI({width: (window.innerWidth < 600)?window.innerWidth:320, autoPlace: false});
+        if(window.innerWidth < 600) gui.close();
         document.getElementById('GUI').appendChild(gui.domElement);
 
-        gui.add(this.ctx.opts, 'preset', ['Box', 'Trapped & rotating']).name('Preset Parameters').onChange(function(value) {
+        // Setup the dat GUI parameter controllers
+        gui.add(this.ctx.opts, 'preset', ['Box', 'Trapped & Rotating', 'Random Vortices (Phase)']).name('Preset Parameters').onChange(function(value) {
             if(value == 'Box'){
                 gl.useProgram(prog_rk4);
                 gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addTrap'), 0);
@@ -367,7 +414,10 @@ class UI {
                 this.ctx.opts['gamma'] = 0.01;
                 gl.uniform1f(gl.getUniformLocation(prog_rk4, 'ang_mom'), 5);
                 this.ctx.opts['omega'] = 0.0;
-            } else if (value == 'Trapped & rotating'){
+                gl.useProgram(prog_show);
+                gl.uniform1i(gl.getUniformLocation(prog_show, 'showPhase'), false);
+                this.ctx.opts['showPhase'] = false;
+            } else if (value == 'Trapped & Rotating'){
                 gl.useProgram(prog_rk4);
                 gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addTrap'), 1);
                 this.ctx.opts['addTrap'] = true;
@@ -375,11 +425,29 @@ class UI {
                 this.ctx.opts['gamma'] = 0.15;
                 gl.uniform1f(gl.getUniformLocation(prog_rk4, 'ang_mom'), 1.6 + 5);
                 this.ctx.opts['omega'] = 1.6;
+            } else if (value == 'Random Vortices (Phase)'){
+                gl.useProgram(prog_rk4);
+                gl.uniform1i(gl.getUniformLocation(prog_rk4, 'addTrap'), 0);
+                this.ctx.opts['addTrap'] = false;
+                gl.uniform1f(gl.getUniformLocation(prog_rk4, 'gamma'), 0.01);
+                this.ctx.opts['gamma'] = 0.01;
+                gl.uniform1f(gl.getUniformLocation(prog_rk4, 'ang_mom'), 5);
+                this.ctx.opts['omega'] = 0.0;
+                gl.useProgram(prog_step);
+                gl.uniform1i(gl.getUniformLocation(prog_step, 'randVort'), Math.floor(Math.random() * 256));
+                gl.uniform1i(gl.getUniformLocation(prog_step, 'reset'), 1);
+                gl.useProgram(prog_show);
+                gl.uniform1i(gl.getUniformLocation(prog_show, 'showPhase'), true);
+                this.ctx.opts['showPhase'] = true;
             }
             for (var i in gui.__controllers) {
                 gui.__controllers[i].updateDisplay();
             }
         }.bind(this));
+
+        gui.add(this.ctx.opts, 'boundary', ['Periodic', 'Reflective']).name('Boundary Condition').onChange(
+            this.ctx.changeBoundary.bind(this.ctx)
+        );
 
         gui.add(this.ctx.opts, 'gamma', 0.0, 0.3).step(0.01).name('Dissipation').onChange(function(value) {
             gl.useProgram(prog_rk4);
@@ -396,14 +464,10 @@ class UI {
             gl.uniform1f(gl.getUniformLocation(prog_rk4, 'ang_mom'), value + 5);
         });
 
-        gui.add(this.ctx.opts.addPot, 'r',0,30).step(1).name('Obstacle Radius').onChange(function(value) {
+        gui.add(this.ctx.opts.addPot, 'r',0,30).step(0.1).name('Obstacle Radius').onChange(function(value) {
             gl.useProgram(prog_rk4);
             gl.uniform1f(gl.getUniformLocation(prog_rk4, 'addPot_r'), value);
         });
-
-        gui.add(this.ctx.opts, 'boundary', ['periodic', 'reflective']).name('Boundary Condition').onChange(
-            this.ctx.changeBoundary.bind(this.ctx)
-        );
 
         gui.add(this.ctx.opts, 'addTrap').name('Enable Trap').onChange(function (value) {
             gl.useProgram(prog_rk4);

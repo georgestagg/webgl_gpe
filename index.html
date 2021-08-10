@@ -2,9 +2,12 @@
 <html>
   <head>
     <title>WebGL GPE</title>
-    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <link rel="stylesheet" href="gpe.css">
+    <link rel="stylesheet" href="gpe.css?v=0.15">
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script id="shader-fs-show" type="x-shader/x-fragment">
@@ -76,12 +79,14 @@
         }
         void main(void) {
             vec2 eye = vec2(0., 1.);
+            // Unpack
             vec2 psi = unpackCmpx(texture2D(s_psi, vTexCoord));
             vec2 psi_pdy = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x, vTexCoord.y + d)));
             vec2 psi_mdy = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x, vTexCoord.y - d)));
             vec2 psi_pdx = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x + d, vTexCoord.y)));
             vec2 psi_mdx = unpackCmpx(texture2D(s_psi, vec2(vTexCoord.x - d, vTexCoord.y)));
 
+            // RK4 step
             if (kstep > 1){
                 vec2 k = unpackCmpx(texture2D(s_k, vTexCoord));
                 vec2 k_pdy = unpackCmpx(texture2D(s_k, vec2(vTexCoord.x, vTexCoord.y + d)));
@@ -103,17 +108,26 @@
                 }
             }
 
+            // Finite difference GPE
             vec2 dpsi_H = -0.5*(psi_pdy + psi_mdy + psi_pdx + psi_mdx - 4.*psi)/dx2  + (psi.x*psi.x + psi.y*psi.y)*psi - psi;
+
+            // Potential obstacle
             if(addPot > 0){
                 dpsi_H += 5.*exp(-64.*64.*(vTexCoord.x-addPot_x)*(vTexCoord.x-addPot_x)/addPot_r 
                             - 64.*64.*(vTexCoord.y-addPot_y)*(vTexCoord.y-addPot_y)/addPot_r)*psi;
             }
+
+            // Trap
             if(addTrap > 0){
                 dpsi_H += 10.*((1.01*vTexCoord.x-0.5)*(1.01*vTexCoord.x-0.5) + (vTexCoord.y-0.5)*(vTexCoord.y-0.5))*psi;
             }
+
+            // Rotating frame
             if(ang_mom > 0.001){
                 dpsi_H += cmpxmul(-eye,(ang_mom-5.)*((vTexCoord.y-0.5)*(psi_pdx - psi_mdx) - (vTexCoord.x-0.5)*(psi_pdy-psi_mdy)))/sqrt(dx2);
             }
+
+            // Dissipation
             vec2 dpsi;
             dpsi = cmpxmul(dpsi_H,-gamma-eye)*dt;        
             gl_FragColor = packCmpx(dpsi);
@@ -130,6 +144,7 @@
         uniform int addVortex;
         uniform int reset;
         uniform int quench;
+        uniform int randVort;
         uniform float addVortex_x;
         uniform float addVortex_y;
         varying vec2 vTexCoord;
@@ -151,64 +166,100 @@
         vec2 cmpxmul(in vec2 a, in vec2 b) {
             return vec2(a.x * b.x - a.y * b.y, a.y * b.x + a.x * b.y);
         }
+        int mod(int x, int y){
+            return x-y*(x/y);
+        }
         void main(void) {
+            // Unpack
             vec2 psi = unpackCmpx(texture2D(s_psi, vTexCoord));
             vec2 k1 = unpackCmpx(texture2D(s_k1, vTexCoord));
             vec2 k2 = unpackCmpx(texture2D(s_k2, vTexCoord));
             vec2 k3 = unpackCmpx(texture2D(s_k3, vTexCoord));
             vec2 k4 = unpackCmpx(texture2D(s_k4, vTexCoord));
 
+            // Final RK4 step
             vec2 psi_new = psi + k1/6. + k2/3. + k3/3. + k4/6.;
+
+            // Add vortices
             if (addVortex==1){
                 psi_new = cmpxmul(psi_new,vec2(cos(atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x)),
                             -sin(atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x))));
-            }else if (addVortex==-1){
+            } else if (addVortex==-1){
                 psi_new = cmpxmul(psi_new,vec2(cos(-atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x)),
                             -sin(-atan(vTexCoord.y-addVortex_y,vTexCoord.x-addVortex_x))));
             }
+
+            // Reset system to unit wavefunction
             if (reset==1){
                 psi_new = vec2(1.0,0.0);
             }
+
+            // Quench the phase
             if (quench==1){
                 float phase = fract(sin(dot(vTexCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
                 psi_new = 2.*vec2(cos(2.*phase),sin(2.*phase));
+            }
+
+            // Insert vortices randomly
+            if (randVort > 0){
+                psi_new = vec2(1.0,0.0);
+                float rx;
+                float ry;
+                float rp;
+                int acc = randVort;
+                for(int i=0;i<30;i++){
+                    acc = 75*acc + 74;
+                    rx = float(mod(acc, 67))/67.;
+                    ry = float(mod(acc/67, 67))/67.;
+                    rp = float(2*mod(randVort+i,2) - 1);
+                    psi_new = cmpxmul(psi_new,vec2(cos(rp*atan(vTexCoord.y-ry,vTexCoord.x-rx)),
+                                -sin(rp*atan(vTexCoord.y-ry,vTexCoord.x-rx))));
+                }
             }
             gl_FragColor = packCmpx(psi_new);
         }
     </script>
   </head>
   <body>
-    <div id='GUI'></div>
-    <div class="canvas-container">
-        <h1>WebGL Superfluid Simulation with the dGPE</h1>
-        <h2>A demo by <a href="https://gwstagg.co.uk" target="_blank">George Stagg</a></h2>
+    <div class="GUI-container">
+        <div id='GUI'></div>
+    </div>
+    <div class="upper-container">
+        <h1 class="title">WebGL Superfluid Simulation using dGPE</h1>
+        <h2 class="subtitle">A demo by <a href="https://gwstagg.co.uk" target="_blank">George Stagg</a></h2>
         <canvas id="GPE" width="256" height="256"></canvas>
     </div>
-    <div class="container">
+    <div class="lower-container">
+        <h2>Controls</h2>
+        <ul>
+            <li>Click: Insert positive vortex.</li>
+            <li>Right click: Insert negative vortex.</li>
+            <li>Click and drag: Stir the fluid by inserting an obstacle.</li>
+        </ul>
+
         <h2>About this simulation</h2>
-        <div class="info-text">
-            <p>The dissipative <a href="https://en.wikipedia.org/wiki/Gross–Pitaevskii_equation" target="_blank">Gross-Pitaevskii Equation</a> (dGPE) is a quantum phenomenological model of finite-temperature <a href="https://en.wikipedia.org/wiki/Superfluidity" target="_blank">superfluid</a> dynamics. The governing differential equation is written,
-                \[ (i-\gamma) \frac{\partial \psi}{\partial t} = -\frac{1}{2}\nabla^2\psi + |\psi|^2\psi + V\psi-\psi, \]
-                where \(\psi\) is a wavefunction describing the fluid, \(V\) is a potential term, and \(\gamma\) is a measure of energy dissipation, related to the temperature of the system. The simulation above demonstrates the evolution of a two dimensional quantum superfluid according to the dGPE.
-            </p>
-            <h3>Superfluidity</h3>
-            <p>Superfluid behaviour is non-intuitive and a direct consequence of the laws of quantum mechanics. At extremely low temperatures this leads to unexpected effects such as fluid flow without any <a href="https://en.wikipedia.org/wiki/Viscosity" target="_blank">viscosity</a> or internal friction. Circulation in a superfluid is restricted to packets of <a href="https://en.wikipedia.org/wiki/Vorticity" target="_blank">vorticity</a> called "<a href="https://en.wikipedia.org/wiki/Quantum_vortex" target="_blank">quantum vortices</a>". Unlike a normal fluid vortex that can vary in size (consider stirring of a cup of coffee compared to a tornado), quantum vortices are all identical in size due to the quantum mechanical constraints. Superfluids are an example of only a few physical systems where quantum behaviour can be observed at macro scales. Quantum vortices can be seen in the simulation above as black "holes" interacting with one another.</p>
-            <p> There are two vortex polarities, "postitive" vortices with a constant circulation of \(\kappa\), and "negative" vortices with a constant circulation of -\(\kappa\). Due to the dissipation in the system, positive and negative vortices are attracted to one another. When they meet they annihilate, destroying themselves and converting their energy entirely into sound waves.</p>
-            <p>A positive quantum vortex can be interactively placed into the system by right clicking. Placing a vortex on top of another vortex in the system will either cause the vortices to annihilate (if they were oppositely signed) or to rotate around each other quickly (if they are same signed).</p>
-            <p>Quantum vortices have been observed in real superfluids and in a rotating system can be seen to spontaneously form a vortex lattice. You can model such a system in this simulation by selecting the "Trapped & rotating" preset in the settings.</p>
-            <h3>Sirring with Obstacles</h3>
-            <p>An "obstacle" can be introduced into the system by clicking (or tapping on mobile) and dragging. The obstacle is created by manipulating the potential term \(V\). Such obstacles are introduced into real superfluid systems by stirring with rods (e.g. with supercooled liquid Helium) or with a blue detuned laser beam (e.g. with a cloud of bosons undergoing Bose-Einstein Condensation).</p>
-            <p>Stirring the fluid by moving an obstacle through it injects vorticity into the system via quantum vortices, which spontaneously appear around the obstacle if the obstacle is moving faster than some critical velocity that depends on the specific parameters of the system.</p>
-            <h3>Wavefunction Phase</h3>
-            <p>Since the dGPE model is quantum mechanical in nature we have direct access to the superfluid's wavefunction. The wavefunction has a certain property called "<a href="https://en.wikipedia.org/wiki/Phase_factor" target="_blank">phase</a>" which can be visualised by ticking "Show Phase" in the settings. The phase is not directly observable in reality, but it is related to some observable aspects of the system such as the local velocity of the fluid. The phase is one way to discover the polarity of a vortex, as the phase will wrap around a vortex by \(2\pi\) in either a clockwise or anti-clockwise fashion.</p>
-            <h3>Dissipation</h3>
-            <p>The dissipation parameter controls how much energy leaves the superfluid system over time. The quantum fluid approaches the lowest energy "<a href="https://en.wikipedia.org/wiki/Ground_state" target="_blank">ground state</a>" as energy leaves the system, which manifests as sound waves dissipating and opposite signed vortices approaching one another and annihilating. Very loosely speaking, the lower the value of the dissipation, the cooler the system is in comparison to the critical temperature for superfluidly to occur.</p>
-            <p>A dissipation of zero corresponds to a superfluid model at a temperature of <a href="https://en.wikipedia.org/wiki/Absolute_zero" target="_blank">absolute-zero</a>. In such a model a superfluid has zero viscosity and sound waves will remain in the system forever.</p>
-            <h3>Numerical Simulation</h3>
-            <p>The simulation is performed on a \( 256 \times 256 \) computational grid using the <a href="https://en.wikipedia.org/wiki/Runge–Kutta_methods#The_Runge–Kutta_method" target="_blank">RK4</a> time-stepping scheme, commonly used for solving ODEs, here implemented as webGL shaders. Twenty RK4 time steps are performed after each frame is drawn on the screen. The complex numbers associated with the fluid's wavefunction on the computational grid are "packed" into RGBA textures for storage, limiting the precision. As such, the simulation is not as numerically stable as more traditional physical simulations. Under some parameters unstable modes can form and the simulation might "blow up". This is more likely to happen when you set a very low or zero dissipation. If this happens, clicking the "Reset Simulation" button should help.</p>
-        </div>
+        <p>The dissipative <a href="https://en.wikipedia.org/wiki/Gross–Pitaevskii_equation" target="_blank">Gross-Pitaevskii Equation</a> (dGPE) is a quantum phenomenological model of finite-temperature <a href="https://en.wikipedia.org/wiki/Superfluidity" target="_blank">superfluid</a> dynamics. The governing differential equation is written,
+            \[ (i-\gamma) \frac{\partial \psi}{\partial t} = -\frac{1}{2}\nabla^2\psi + |\psi|^2\psi + V\psi-\psi, \]
+            where \(\psi\) is a wavefunction describing the fluid, \(V\) is a potential term, and \(\gamma\) is a measure of energy dissipation, related to the temperature of the system. The simulation above demonstrates the evolution of a two dimensional quantum superfluid according to the dGPE.
+        </p>
+        <h3>Superfluidity</h3>
+        <p>Superfluid behaviour is non-intuitive as a direct consequence of the laws of quantum mechanics. At extremely low temperatures this leads to unexpected effects such as fluid flow without any <a href="https://en.wikipedia.org/wiki/Viscosity" target="_blank">viscosity</a>, or internal friction. Circulation in a superfluid is restricted into packets of <a href="https://en.wikipedia.org/wiki/Vorticity" target="_blank">vorticity</a> called "<a href="https://en.wikipedia.org/wiki/Quantum_vortex" target="_blank">quantum vortices</a>". Unlike normal fluid vortices that can vary in size (consider stirring of a cup of coffee compared to a tornado), quantum vortices are all identical in size due to the quantum mechanical constraints. Superfluids are an example of only a few physical systems where quantum behaviour can be observed at macro scales.</p>
+        <p>Quantum vortices can be seen in the simulation above as black "holes" interacting with one another. There are two possible vortex polarities, "postitive" vortices with a constant circulation of \(\kappa\), and "negative" vortices with a constant circulation of -\(\kappa\). Due to the dissipation in the system, positive and negative vortices are attracted to one another. When they meet they annihilate, destroying themselves and converting their energy entirely into sound waves.</p>
+        <p>A positive quantum vortex can be interactively placed into the system by clicking, a negative vortex by right clicking. Placing a vortex on top of another vortex in the system will either cause the vortices to annihilate (if they were oppositely signed) or to rotate around each other quickly (if they are same signed).</p>
+        <p>Quantum vortices have been <a href="https://www.physics.umd.edu/courses/Phys726/The_Quantum_Vortex.htm#_Toc257799967" target="_blank">observed in real superfluids</a> and in a rotating system can be seen to spontaneously form a vortex lattice. You can model such a system in this simulation by selecting the "Trapped & Rotating" preset in the settings.</p>
+        <h3>Stirring with Obstacles</h3>
+        <p>An "obstacle" can be introduced into the system by clicking (or tapping on mobile) and dragging. The obstacle is created by manipulating the potential term \(V\). Such obstacles are introduced into real superfluid systems by stirring with rods (e.g. with supercooled liquid Helium) or by shining a blue detuned laser beam into the system (e.g. with a cloud of bosons undergoing Bose-Einstein Condensation).</p>
+        <p>Stirring the fluid by moving an obstacle through it injects vorticity into the system via quantum vortices, which spontaneously appear around the obstacle if the obstacle is moving faster than some critical velocity. The exact value of the critical velocity depends on the specific parameters of the obstacle and system.</p>
+        <h3>Wavefunction Phase</h3>
+        <p>With the dGPE model we have direct access to the superfluid's quantum wavefunction. The wavefunction has a certain property called "<a href="https://en.wikipedia.org/wiki/Phase_factor" target="_blank">phase</a>" which can be visualised by ticking "Show Phase" in the settings. The phase is not directly observable in reality, but it is related to some observable aspects of the system such as the local velocity of the fluid. The phase is one way to discover the polarity of a vortex, as the phase will wrap around a vortex by \(2\pi\) in either a clockwise or anti-clockwise fashion depending on the polarity.</p>
+        <p>Clicking the "Quench Phase" button will set the phase randomly throughout the entire system. This has the effect of filling the system with vortices.</p> 
+        <h3>Dissipation</h3>
+        <p>The dissipation parameter controls how much energy leaves the superfluid system over time. The quantum fluid approaches the lowest energy "<a href="https://en.wikipedia.org/wiki/Ground_state" target="_blank">ground state</a>" as energy leaves the system, which manifests as sound waves dissipating and opposite signed vortices approaching one another and annihilating. Very loosely speaking, in this model the lower the value of the dissipation, the cooler the system is in comparison to the <a href="https://en.wikipedia.org/wiki/Bose–Einstein_condensate" target="_blank">critical temperature for superfluidly to occur</a>.</p>
+        <p>A dissipation of zero corresponds to a superfluid model at a temperature of <a href="https://en.wikipedia.org/wiki/Absolute_zero" target="_blank">absolute-zero</a>. In such a model a superfluid has zero viscosity and sound waves will remain in the system forever.</p>
+        <h3>Numerical Simulation</h3>
+        <p>The simulation is performed on a \( 256 \times 256 \) computational grid using the <a href="https://en.wikipedia.org/wiki/Runge–Kutta_methods#The_Runge–Kutta_method" target="_blank">RK4</a> time-stepping scheme, commonly used for solving ODEs, here implemented as webGL shaders. Twenty RK4 steps are performed after each frame is drawn on the screen. The complex numbers associated with the fluid's wavefunction on the computational grid are "packed" into RGBA textures for storage, limiting the precision. As such, the simulation is not as numerically stable as more traditional physical simulations. Under some parameters unstable modes can form and the simulation might "blow up". This is more likely to happen when you set a very low or zero dissipation. If this happens, clicking the "Reset Simulation" button should help.</p>
     </div>
     <script src="dat.gui.js"></script>
-    <script src="gpe.js?v=0.08"></script>
+    <script src="gpe.js?v=0.15"></script>
   </body>
 </html>
